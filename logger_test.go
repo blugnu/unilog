@@ -5,8 +5,6 @@ import (
 	"errors"
 	"reflect"
 	"testing"
-
-	"github.com/blugnu/unilog/internal"
 )
 
 type MockAdapter struct {
@@ -21,6 +19,9 @@ func (mock MockAdapter) Emit(level Level, s string) {
 	*mock.emitLevel = level
 	*mock.emitString = s
 	*mock.emitCalled = true
+}
+
+func (mock MockAdapter) SetLevel(level Level) {
 }
 
 func (mock MockAdapter) NewEntry() Adapter {
@@ -103,7 +104,7 @@ func TestLogEmissions(t *testing.T) {
 			{name: "withdecoration", fn: func(s string) {
 				od := enrichmentFuncs
 				defer func() { enrichmentFuncs = od }()
-				EnrichWith(func(ctx context.Context, e Enricher) Entry {
+				RegisterEnrichment(func(ctx context.Context, e Enricher) Entry {
 					enrichmentFuncsCalled = true
 					return e.(Entry)
 				})
@@ -225,39 +226,6 @@ func TestLogger_NewEntry(t *testing.T) {
 	if !reflect.DeepEqual(wanted, got) {
 		t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
 	}
-}
-
-func TestFromContext(t *testing.T) {
-	t.Run("when context does not contain a Logger", func(t *testing.T) {
-		// ARRANGE
-		ctx := context.Background()
-
-		// ACT
-		entry := FromContext(ctx)
-
-		// ASSERT
-		wanted := (Entry)(nil)
-		got := entry
-		if wanted != got {
-			t.Errorf("wanted %#v, got %#v", wanted, got)
-		}
-	})
-
-	t.Run("when context contains a Logger", func(t *testing.T) {
-		// ARRANGE
-		ctx := context.Background()
-		ctx = context.WithValue(ctx, internal.LoggerKey, nul)
-
-		// ACT
-		entry := FromContext(ctx)
-
-		// ASSERT
-		wanted := nul.WithContext(ctx).(*logger)
-		got := entry.(*logger)
-		if *wanted != *got {
-			t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
-		}
-	})
 }
 
 func TestUsingAdapter(t *testing.T) {

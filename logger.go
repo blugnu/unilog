@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/blugnu/go-errorcontext"
-	"github.com/blugnu/unilog/internal"
 )
 
 // logger implements `Logger`, `Enricher` and `Entry` interfaces.  It encapsulates
@@ -136,9 +135,8 @@ func (log *logger) FatalError(err error) {
 	entry.Fatal(err.Error())
 }
 
-// WithField returns a new `EnrichedEntry` enriched with an additional
-// named entry with the specified value.
-// func (log *logger) WithField(name string, value any) Enricher {
+// WithField returns a new `Entry` enriched with an additional
+// named field with the specified value.
 func (log *logger) WithField(name string, value any) Entry {
 	entry := log.Adapter.WithField(name, value)
 	return &logger{log.Context, entry}
@@ -163,26 +161,6 @@ func (log *logger) WithContext(ctx context.Context) Entry {
 // both enriched with information available from the context `ctx`.
 func (log *logger) NewEntry() Entry {
 	return log.fromContext(log.Context)
-}
-
-// FromContext inspects a specified context to see if it contains a
-// `unilog.Logger`; if a `Logger` is found, it is used to initialise
-// a new `Entry` from the context which is then returned.
-//
-// If the context does not contain a `Logger`, `nil` is returned.
-//
-// NOTE: This function is intended to be used in modules that accept
-// a `Logger` supplied via a passed-in context, rather than a specific
-// configuration item or field.  This may be desirable where `Logger`
-// support is added without wishing to break existing configuration
-// contracts, for example.
-func FromContext(ctx context.Context) Entry {
-	log := ctx.Value(internal.LoggerKey)
-	if log == nil {
-		return nil
-	}
-
-	return log.(Logger).WithContext(ctx)
 }
 
 // UsingAdapter initialises a new Logger encapsulating a specified

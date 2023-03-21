@@ -18,28 +18,21 @@
 
 A package that provides an adaptable logger implementation to be used by other re-usable modules that wish to emit logs using a logger supplied by the consuming project, ensuring consistent log output from both the application and pacakges in any modules (that support `unilog`).
 
-A module that supports logging via a `unilog.Logger` may also register enrichment functions to automatically add enrichment from a context at the time of emitting a log entry.  Applications may also register their own enrichment functions.
+A module that supports logging via a `unilog.Logger` may also register enrichment functions to automatically add enrichment from context at the time of emitting any log entry.  Applications may also register their own enrichment functions and/or explicitly add enrichment to individual log entries.
 
 ## How It Works
 
 `unilog` does not implement an actual logger.  It provides a delegate that routes logging calls via an _adapter_ to a logger configured by an application/service.  A consuming project will configure whatever logger it wishes and then wrap that with the appropriate _adapter_ so that it may be injected into any modules or packages that support a `unilog.Logger`.
 
-Adapters are provided in separate modules for `logrus` ([unilog4logrus](https://github.com/unilog4logrus)) and the standard library `log` package ([unilog4stdlog](https://github.com/unilog4stdlog)).
+An adapter is provided for the standard library `log` package. A `Nul` adapter is also provided.  This produces no log output what-so-ever ("logging to NUL").
 
-A `Nul` adapter is provided by the `unilog` package itself; this adapter produces no log output what-so-ever ("logging to NUL").
+An adapter for logrus is available in a separate module: ([unilog4logrus](https://github.com/unilog4logrus)).  Providing this adapter in a separate module avoids unilog itself taking any dependency on `logrus` itself, for those using alternate logging packages.
 
 <br>
 <hr>
 <br>
 
 ## How to Use UniLog
-
-### Implementing an Adapter
-
-1. Implement the `unilog.Adapter` interface
-  - only 3 functions are required for each adapter
-  - the [unilog4logrus](https://github.com/unilog4logrus) and [unilog4stdlog](https://github.com/unilog4stdlog) adapter projects provide reference examples
-2. _OPTIONAL (but recommended)_: Provide a helper function named `Logger` that accepts a logger and any additional required params that configures an adapter and returns the result of `unilog.UsingAdapter()`
 
 ### In an Application or Service Project
 
@@ -48,6 +41,37 @@ A `Nul` adapter is provided by the `unilog` package itself; this adapter produce
 4. Pass your `unilog.Logger` into any modules/packages used that support unilog
 3. _OPTIONAL:_ Register any `Enrichment` functions provided by your project
 5. Enjoy your logs!
+
+#### Example: Using unilog with logrus
+
+```golang
+var logger unilog.Logger
+
+func main() {
+  // A hypothetical command flag to suppress all log output, otherwise
+  // we will log using std log
+  logEnabled := true
+  flag.BoolVar(&noLog, "nolog", false, "suppress all log output")
+	flag.Parse()
+
+  // Get a unilog encapsulating std log
+	logger = unilog.StdLog()
+
+  // Pass logger into the `foo` module, which supports unilog
+  foo.Logger = logger
+
+  // Do some logging ourselves
+  log := logger.NewEntry()
+  log.Info("logging initialised")
+
+  // Any logs written by SetupTheFoo() will use the same logger as 'log'
+  if err := foo.SetupTheFoo(); err != nil {
+    log.FatalError(err)
+  }
+
+  // ... etc
+}
+```
 
 <br>
 
@@ -61,3 +85,12 @@ A `Nul` adapter is provided by the `unilog` package itself; this adapter produce
     - initialise a `unilog.Entry` in any function wishing to emit a log using either `FromContext()` or `NewEntry()` on the `unilog.Logger` (depending on whether a context is accepted by or otherwise available to the function)
     - emit logs at the appropriate level using the `Entry` obtained
     - Ensure that logs are **not written** if _no_ `Logger` is configured.  _Either_ ensure logging statements are condition _or_ initialise a default `unilog.Logger` using `unilog.Nul()`
+
+### Implementing an Adapter
+
+1. Implement the `unilog.Adapter` interface
+  - only 3 functions are required for an adapter
+  - the [unilog4logrus](https://github.com/unilog4logrus) adapter project provides a reference example, alongside the Nul and StdLog adapters implemented in the unilog package itself.
+2. _OPTIONAL_: provide an interface for any adapter specific configuration you wish to provide (the `Adapter` interface in [unilog4logrus](https://github.com/unilog4logrus) is an example).   
+3. _OPTIONAL (but recommended)_: Provide a helper function named `Logger` that accepts a logger and any additional required params that configures an adapter and returns the result of `unilog.UsingAdapter()`
+

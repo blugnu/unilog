@@ -16,7 +16,7 @@ func TestDecorator(t *testing.T) {
 	if len(oef) != 0 {
 		t.Fatal("`decorators` is not empty")
 	}
-	EnrichWith(f)
+	RegisterEnrichment(f)
 
 	// ASSERT
 	wanted := 1

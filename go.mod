@@ -1,6 +1,6 @@
 module github.com/blugnu/unilog
 
-go 1.19
+go 1.18
 
 require github.com/blugnu/go-logspy v0.1.1
 
