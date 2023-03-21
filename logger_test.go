@@ -5,6 +5,8 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+
+	"github.com/blugnu/go-errorcontext"
 )
 
 type MockAdapter struct {
@@ -240,5 +242,43 @@ func TestUsingAdapter(t *testing.T) {
 	wanted := &logger{ctx, adapter}
 	if *wanted != *got {
 		t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
+	}
+}
+
+func TestLoggerEntryFromArgs(t *testing.T) {
+	// ARRANGE
+	type key int
+
+	bg := context.Background()
+	ctx := context.WithValue(bg, key(1), "value")
+	sut := &logger{Context: bg, Adapter: &nulAdapter{}}
+	rawerr := errors.New("error")
+	ctxerr := errorcontext.Wrap(ctx, rawerr, "message")
+	ctxerr2 := errorcontext.Wrap(context.WithValue(bg, key(2), "key2"), rawerr, "message")
+
+	testcases := []struct {
+		name   string
+		args   []any
+		result Entry
+	}{
+		{name: "no args", args: []any{}, result: sut},
+		{name: "no errors", args: []any{"foo", 42}, result: sut},
+		{name: "error, no context", args: []any{"foo", rawerr}, result: sut},
+		{name: "error, with context", args: []any{"foo", ctxerr}, result: &logger{ctx, &nulAdapter{}}},
+		{name: "multiple errors, first with no context", args: []any{rawerr, ctxerr}, result: &logger{ctx, &nulAdapter{}}},
+		{name: "multiple errors, first with context", args: []any{ctxerr, rawerr}, result: &logger{ctx, &nulAdapter{}}},
+		{name: "multiple errors, both with context", args: []any{ctxerr, ctxerr2}, result: &logger{ctx, &nulAdapter{}}},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			// ACT
+			got := sut.entryFromArgs(tc.args...)
+
+			// ASSERT
+			wanted := tc.result
+			if !reflect.DeepEqual(wanted, got) {
+				t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
+			}
+		})
 	}
 }
