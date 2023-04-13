@@ -21,13 +21,13 @@ func TestContextWithLogger(t *testing.T) {
 	}
 }
 
-func TestLoggerFromContext(t *testing.T) {
+func TestLogFromContext(t *testing.T) {
 	t.Run("when context does not contain a Logger", func(t *testing.T) {
 		// ARRANGE
 		ctx := context.Background()
 
 		// ACT
-		entry := LoggerFromContext(ctx)
+		entry := LogFromContext(ctx)
 
 		// ASSERT
 		wanted := (Entry)(nil)
@@ -43,11 +43,44 @@ func TestLoggerFromContext(t *testing.T) {
 		ctx = context.WithValue(ctx, loggerContextKey, nul)
 
 		// ACT
-		entry := LoggerFromContext(ctx)
+		result := LogFromContext(ctx)
 
 		// ASSERT
 		wanted := nul.WithContext(ctx).(*logger)
-		got := entry.(*logger)
+		got := result.(*logger)
+		if *wanted != *got {
+			t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
+		}
+	})
+}
+
+func TestLoggerFromContext(t *testing.T) {
+	t.Run("when context does not contain a Logger", func(t *testing.T) {
+		// ARRANGE
+		ctx := context.Background()
+
+		// ACT
+		result := LoggerFromContext(ctx)
+
+		// ASSERT
+		wanted := (Logger)(nil)
+		got := result
+		if wanted != got {
+			t.Errorf("wanted %#v, got %#v", wanted, got)
+		}
+	})
+
+	t.Run("when context contains a Logger", func(t *testing.T) {
+		// ARRANGE
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, loggerContextKey, nul)
+
+		// ACT
+		result := LoggerFromContext(ctx)
+
+		// ASSERT
+		wanted := nul
+		got := result.(*logger)
 		if *wanted != *got {
 			t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
 		}
