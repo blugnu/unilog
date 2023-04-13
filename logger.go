@@ -29,7 +29,6 @@ func (log *logger) emit(level Level, s string) {
 // wrapping a context with an `ErrorContext`, the function simply returns
 // a reference to the current entry.
 func (log *logger) entryFromArgs(args ...any) Entry {
-	entry := log
 	for _, a := range args {
 		if _, isError := a.(error); !isError {
 			continue
@@ -40,25 +39,23 @@ func (log *logger) entryFromArgs(args ...any) Entry {
 			continue
 		}
 
-		entry = entry.fromContext(ctx)
-		break
+		return log.fromContext(ctx)
 	}
 
-	return entry
+	return log
 }
 
 // fromContext returns a new `logger` using the same `Adapter` as the receiver,
 // encapsulating the specified `Context`.  The new `logger` has all registered
 // enrichment applied.
-func (log *logger) fromContext(ctx context.Context) *logger {
-	logger := &logger{ctx, log.Adapter.NewEntry()}
+func (log *logger) fromContext(ctx context.Context) Entry {
+	enriched := log.Adapter.NewEntry()
 
-	var enriched Enricher = logger
 	for _, enrich := range enrichmentFuncs {
 		enriched = enrich(ctx, enriched)
 	}
 
-	return logger
+	return &logger{ctx, enriched}
 }
 
 // Trace emits a string as a `Trace` level entry to the log.
@@ -108,12 +105,12 @@ func (log *logger) Warnf(format string, args ...any) {
 // Error emits an error as an `Error` level entry to the log.
 //
 // If the error wraps a specific context then the error is logged using an entry
-// enriched with any  information in the context supported by a registered
+// enriched with any information in the context supported by a registered
 // enrichment function.
 func (log *logger) Error(err error) {
 	ctx := errorcontext.FromError(log.Context, err)
 	entry := log.fromContext(ctx)
-	entry.emit(Error, err.Error())
+	entry.Emit(Error, err.Error())
 }
 
 // Errorf emits an `Error` level entry to the log using a format string and args.
