@@ -317,7 +317,6 @@ func TestLogger_fromContext(t *testing.T) {
 
 		// ACT
 		enriched.Emit(Info, "test")
-		t.Errorf("%s", logspy.Sink())
 
 		// ASSERT
 		wanted := true
