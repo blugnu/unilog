@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-func TestDecorator(t *testing.T) {
+func TestRegisterEnrichment(t *testing.T) {
 	// ARRANGE
 	oef := enrichmentFuncs
 	defer func() { enrichmentFuncs = oef }()
 
-	f := func(ctx context.Context, e Enricher) Entry { return e.(Entry) }
+	f := func(ctx context.Context, e Adapter) Adapter { return e }
 
 	// ACT
 	if len(oef) != 0 {

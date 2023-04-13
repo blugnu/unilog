@@ -3,10 +3,13 @@ package unilog
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/blugnu/go-errorcontext"
+	"github.com/blugnu/go-logspy"
 )
 
 type MockAdapter struct {
@@ -106,9 +109,9 @@ func TestLogEmissions(t *testing.T) {
 			{name: "withdecoration", fn: func(s string) {
 				od := enrichmentFuncs
 				defer func() { enrichmentFuncs = od }()
-				RegisterEnrichment(func(ctx context.Context, e Enricher) Entry {
+				RegisterEnrichment(func(ctx context.Context, e Adapter) Adapter {
 					enrichmentFuncsCalled = true
-					return e.(Entry)
+					return e
 				})
 				sut.Info(s)
 			}, Level: Info, message: "test", callsExit: false, callsDecorators: true},
@@ -281,4 +284,46 @@ func TestLoggerEntryFromArgs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLogger_fromContext(t *testing.T) {
+	// ARRANGE
+	ef := func(ctx context.Context, e Adapter) Adapter { return e.WithField("enriched-name", "enriched-value") }
+	oef := enrichmentFuncs
+	defer func() { enrichmentFuncs = oef }()
+
+	RegisterEnrichment(ef)
+
+	ctx := context.Background()
+	sut := StdLog().(*logger)
+
+	// ACT
+	enriched := sut.fromContext(ctx)
+
+	// ASSERT
+	t.Run("returns new logger", func(t *testing.T) {
+		wanted := true
+		got := sut != enriched
+		if wanted != got {
+			t.Errorf("wanted %v, got %v", wanted, got)
+		}
+	})
+
+	t.Run("applies enrichment", func(t *testing.T) {
+		// ARRANGE
+		defer logspy.Reset()
+		defer log.SetOutput(os.Stdout)
+		log.SetOutput(logspy.Sink())
+
+		// ACT
+		enriched.Emit(Info, "test")
+		t.Errorf("%s", logspy.Sink())
+
+		// ASSERT
+		wanted := true
+		got := logspy.Contains("enriched-name") && logspy.Contains("enriched-value")
+		if wanted != got {
+			t.Errorf("wanted %v, got %v\nemitted: %s", wanted, got, logspy.Sink())
+		}
+	})
 }
