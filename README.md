@@ -58,28 +58,40 @@ An adapter for [logrus](https://github.com/sirupsen/logrus) is available in a se
 ### In an Application
 
 1. Configure a logger
-2. Wrap your logger in a `unilog.Logger` using either `unilog.UsingAdapter()` or a helper func provided.  For example, `unilog.Nul()` or `unilog.StdLog()`.  If using other adapters, refer to their documentation for any helper funcs they may provide.
+2. Wrap your logger in a `unilog.Logger` using either `unilog.UsingAdapter()` or a helper func such as `unilog.Nul()` or `unilog.StdLog()`.  For any other adapters, refer to their documentation for any helper funcs they may provide.
 3. Pass your `unilog.Logger` into any modules/packages used that support it
 4. _OPTIONAL:_ Register any `Enrichment` functions provided by your project
 5. To emit logs, initialise an entry with any relevant context and emit messages as required
 6. Enjoy your logs!
 
-#### Example: Using unilog with logrus
+#### Example: Using unilog with std log
 
 ```golang
-var logger unilog.Logger
+// Initialise a nul logger by default
+
+import (
+    "flag"
+
+    "github.com/blugnu/unilog"
+
+    "myorg/foo"
+)
+
+// By default logs will be "redirected to nul".  i.e. no log output 
+var logger unilog.Logger = unilog.Nul()
 
 func main() {
-  // A hypothetical command flag to suppress all log output, otherwise
-  // we will log using std log
+  // A hypothetical command flag to turn on logging.
   logEnabled := true
-  flag.BoolVar(&noLog, "nolog", false, "suppress all log output")
-	flag.Parse()
+  flag.BoolVar(&logEnabled, "log", false, "turn on log output")
+  flag.Parse()
 
-  // Get a unilog encapsulating std log
-	logger = unilog.StdLog()
+  // If logging is enabled, replace the Nul() logger with a std log logger
+  if logEnabled {
+      logger = unilog.StdLog()
+  }
 
-  // Pass logger into the `foo` module, which supports unilog
+  // Pass logger into the `foo` package, which supports unilog via an exported variable
   foo.Logger = logger
 
   // Do some logging ourselves
@@ -110,13 +122,26 @@ func main() {
     - initialise a `unilog.Entry` in any function wishing to emit a log using either `FromContext()` or `NewEntry()` on the `unilog.Logger` (depending on whether a context is accepted by or otherwise available to the function)
     - emit logs at the appropriate level using the `Entry` obtained
 
-NOTE: You should ensure that logs are **not written** if _no_ `Logger` is configured.  _Either_ ensure that logging statements are conditional (tedious) _or_ initialise a default `unilog.Logger` using `unilog.Nul()`.  Alternatively you may treat the lack of of a `Logger` as an error in any initialization provided by your module, requiring applications to explicitly configure any `Logger`, including `Nul()`.
+> _**NOTE:** You should ensure that logs are **not written** if _no_ `Logger` is configured.</br></br>_**Either**_: ensure that logging statements are conditional (tedious and error prone)</br>_**or**_: initialise a default `unilog.Logger` using `unilog.Nul()`.</br></br>_**Alternatively** (recommended)_: treat the lack of a `Logger` as an error in any initialization provided by your module, requiring applications to _explicitly_ configure any `Logger`, including `Nul()`_.
 
 ### Implementing an Adapter
 
-1. Implement the `unilog.Adapter` interface
-  - only 3 functions are required for an adapter
-  - the [unilog4logrus](https://github.com/unilog4logrus) adapter project provides a reference example, alongside the `Nul()` and `StdLog()` adapters implemented in the `unilog` package itself.
+1. Implement the `unilog.Adapter` interface (see below)
+
 2. _OPTIONAL_: provide an interface for any adapter specific configuration you wish to provide (the `Adapter` interface in [unilog4logrus](https://github.com/blugnu/unilog4logrus) is an example).   
+
 3. _OPTIONAL (but recommended)_: Provide a helper function named `Logger` that accepts a logger and any additional required params that configures an adapter and returns the result of `unilog.UsingAdapter()`
 
+### Adapter Interface
+
+The following three functions are required to be implemented by an `Adapter`:
+
+| function | description |
+| -- | -- |
+| `Emit(unilog.Level, string)` | implement this function to emit logs using whatver logging package your adapter supports.  Your adapter must map the `unilog.Level` to the corresponding level supported by the underlying logging package (or adapt the behaviour accordingly if the underlying plogging package does not directly support levelled logging) |
+| `NewEntry() Adapter` | implement this function to return a new adapter corresponding to a new log entry |
+|	`WithField(string, any) Adapter` | implement this function to return a new adapter with the supplied, named value added to any log enrichment on the receiving adapter |
+
+### Adapter Reference Example
+
+The [unilog4logrus](https://github.com/unilog4logrus) adapter project provides a reference example, alongside the `Nul()` and `StdLog()` adapters implemented in the `unilog` package itself.
