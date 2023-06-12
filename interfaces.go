@@ -8,6 +8,12 @@ type Emitter interface {
 	Emit(Level, string)
 }
 
+// Enricher is in interface that provides a single function for enriching
+// a log entry with an additional field having a specified name and value.
+type Enricher interface {
+	WithField(string, any) Entry
+}
+
 // Adapter is an interface that mediates between the abstract Logger and
 // a concrete implementation using some logging package.
 //
@@ -40,7 +46,7 @@ type Entry interface {
 	Emitter
 	Debug(s string)                         // Debug emits a Debug level log message
 	Debugf(format string, args ...any)      // Debugf emits a Debug level log message using a specified format string and args
-	Error(err error)                        // Error emits an Error level log message consisting of err.Error()
+	Error(err any)                          // Error emits an Error level log message consisting of err
 	Errorf(format string, args ...any)      // Errorf emits an Error level log message using a specified format string and args
 	Fatal(s string)                         // Fatal emits a Fatal level log message then calls os.Exit(1)
 	Fatalf(format string, args ...any)      // Fatalf emits a Fatal level log message using a specified format string and args, then calls os.Exit(1)

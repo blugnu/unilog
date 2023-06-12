@@ -7,18 +7,37 @@ import (
 	"github.com/blugnu/go-errorcontext"
 )
 
-// logger implements `Logger`, `Enricher` and `Entry` interfaces.  It encapsulates
-// a specific context with an `Adapter` which is used to perform all concrete
+// logger implements Logger, Enricher and Entry interfaces.  It encapsulates
+// a specific context with an Adapter which is used to perform all concrete
 // logging operations.
 type logger struct {
 	context.Context
 	Adapter
+	fields map[string]any
 }
 
-// emit sends a specified string to the logger with the specified log level.
-func (log *logger) emit(level Level, s string) {
-	entry := log.fromContext(log.Context)
-	entry.Emit(level, s)
+// copyFields returns a copy of the fields map, or nil if there are no fields.
+func (log *logger) copyFields() map[string]any {
+	if log.fields == nil {
+		return nil
+	}
+
+	fields := make(map[string]any, len(log.fields))
+	for k, v := range log.fields {
+		fields[k] = v
+	}
+	return fields
+}
+
+// Emit sends a specified string to the logger with the specified log level.
+func (log *logger) Emit(level Level, s string) {
+	adapter := log.fromContext(log.Context).(*logger).Adapter
+
+	for k, v := range log.fields {
+		adapter = adapter.WithField(k, v)
+	}
+
+	adapter.Emit(level, s)
 }
 
 // entryFromArgs examines args to identify any error values.  If any error
@@ -49,18 +68,19 @@ func (log *logger) entryFromArgs(args ...any) Entry {
 // encapsulating the specified `Context`.  The new `logger` has all registered
 // enrichment applied.
 func (log *logger) fromContext(ctx context.Context) Entry {
-	enriched := log.Adapter.NewEntry()
+	var logger = &logger{ctx, log.Adapter, log.copyFields()}
 
+	var enriched Entry = logger
 	for _, enrich := range enrichmentFuncs {
 		enriched = enrich(ctx, enriched)
 	}
 
-	return &logger{ctx, enriched}
+	return enriched
 }
 
 // Trace emits a string as a `Trace` level entry to the log.
 func (log *logger) Trace(s string) {
-	log.emit(Trace, s)
+	log.Emit(Trace, s)
 }
 
 // Tracef emits a `Trace` level entry to the log using a format string and args.
@@ -71,7 +91,7 @@ func (log *logger) Tracef(format string, args ...any) {
 
 // Debug emits a string as a `Debug` level entry to the log.
 func (log *logger) Debug(s string) {
-	log.emit(Debug, s)
+	log.Emit(Debug, s)
 }
 
 // Debugf emits a `Debug` level entry to the log using a format string and args.
@@ -82,7 +102,7 @@ func (log *logger) Debugf(format string, args ...any) {
 
 // Info emits a string as an `Info` level entry to the log.
 func (log *logger) Info(s string) {
-	log.emit(Info, s)
+	log.Emit(Info, s)
 }
 
 // Infof emits an `Info` level entry to the log using a format string and args.
@@ -93,7 +113,7 @@ func (log *logger) Infof(format string, args ...any) {
 
 // Warn emits a string as a `Warn` level entry to the log.
 func (log *logger) Warn(s string) {
-	log.emit(Warn, s)
+	log.Emit(Warn, s)
 }
 
 // Warnf emits a `Warn` level entry to the log using a format string and args.
@@ -102,15 +122,26 @@ func (log *logger) Warnf(format string, args ...any) {
 	entry.Warn(fmt.Sprintf(format, args...))
 }
 
-// Error emits an error as an `Error` level entry to the log.
+// Error emits an error or string as an Error level entry to the log.
 //
-// If the error wraps a specific context then the error is logged using an entry
-// enriched with any information in the context supported by a registered
-// enrichment function.
-func (log *logger) Error(err error) {
-	ctx := errorcontext.FromError(log.Context, err)
-	entry := log.fromContext(ctx)
-	entry.Emit(Error, err.Error())
+// If logging an error wrapping a specific context then the error is
+// logged using an entry  enriched with any information in the error context.
+//
+// If logging a string then the string is logged as-is.
+//
+// If logging any other type then the type is logged using `fmt.Sprintf` with
+// the `%v` format.
+func (log *logger) Error(err any) {
+	switch err := err.(type) {
+	case error:
+		ctx := errorcontext.FromError(log.Context, err)
+		entry := log.fromContext(ctx)
+		entry.Emit(Error, err.Error())
+	case string:
+		log.Emit(Error, err)
+	default:
+		log.Emit(Error, fmt.Sprintf("%v", err))
+	}
 }
 
 // Errorf emits an `Error` level entry to the log using a format string and args.
@@ -126,7 +157,7 @@ func (log *logger) Errorf(format string, args ...any) {
 // Fatal emits a string as a `Fatal` level entry to the log then terminates
 // the process with an exit code of 1.
 func (log *logger) Fatal(s string) {
-	log.emit(Fatal, s)
+	log.Emit(Fatal, s)
 	exit(1)
 }
 
@@ -151,8 +182,13 @@ func (log *logger) FatalError(err error) {
 // WithField returns a new `Entry` enriched with an additional
 // named field with the specified value.
 func (log *logger) WithField(name string, value any) Entry {
-	entry := log.Adapter.WithField(name, value)
-	return &logger{log.Context, entry}
+	fields := log.copyFields()
+	if fields == nil {
+		fields = map[string]any{}
+	}
+	fields[name] = value
+
+	return &logger{log.Context, log.Adapter, fields}
 }
 
 // WithContext returns a new `Entry`, enriched with any information
@@ -179,5 +215,5 @@ func (log *logger) NewEntry() Entry {
 // UsingAdapter initialises a new Logger encapsulating a specified
 // context and using a supplied `Adapter`.
 func UsingAdapter(ctx context.Context, adapter Adapter) Logger {
-	return &logger{ctx, adapter}
+	return &logger{ctx, adapter, map[string]any{}}
 }
