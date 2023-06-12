@@ -10,7 +10,7 @@ func TestRegisterEnrichment(t *testing.T) {
 	oef := enrichmentFuncs
 	defer func() { enrichmentFuncs = oef }()
 
-	f := func(ctx context.Context, e Adapter) Adapter { return e }
+	f := func(ctx context.Context, e Enricher) Entry { return e.(Entry) }
 
 	// ACT
 	if len(oef) != 0 {

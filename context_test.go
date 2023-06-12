@@ -2,6 +2,7 @@ package unilog
 
 import (
 	"context"
+	"reflect"
 	"testing"
 )
 
@@ -48,7 +49,7 @@ func TestLogFromContext(t *testing.T) {
 		// ASSERT
 		wanted := nul.WithContext(ctx).(*logger)
 		got := result.(*logger)
-		if *wanted != *got {
+		if !reflect.DeepEqual(*wanted, *got) {
 			t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
 		}
 	})
@@ -81,7 +82,7 @@ func TestLoggerFromContext(t *testing.T) {
 		// ASSERT
 		wanted := nul
 		got := result.(*logger)
-		if *wanted != *got {
+		if !reflect.DeepEqual(*wanted, *got) {
 			t.Errorf("\nwanted %#v\ngot    %#v", wanted, got)
 		}
 	})

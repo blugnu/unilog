@@ -2,7 +2,7 @@ package unilog
 
 import "context"
 
-type EnrichmentFunc func(context.Context, Adapter) Adapter
+type EnrichmentFunc func(context.Context, Enricher) Entry
 
 var enrichmentFuncs []EnrichmentFunc
 
