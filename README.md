@@ -14,15 +14,15 @@
 
 # unilog
 
-> noun: def. a uni[_fied_] log[_ger_]
+> noun: def. a unified/universal logger
 
-A package that provides an adaptable logger implementation to be used by other re-usable modules that wish to emit logs using a logger supplied by the consuming project, ensuring consistent log output from both the application and pacakges in any modules (that support `unilog`).
+A package that provides an adaptable logger implementation to be used by other re-usable modules that wish to emit logs using a logger supplied by the consuming project, ensuring consistent log output from both the application and packages in any modules (that support `unilog`).
 
 A module that supports logging via a `unilog.Logger` may also register enrichment functions to automatically add enrichment from context at the time of emitting any log entry.  Applications may also register their own enrichment functions and/or explicitly add enrichment to individual log entries.
 
-## go-errorcontext support
+## blugnu/errorcontext support
 
-`unilog` supports [go-errorcontext](https://github.com/blugnu/go-errorcontext) when logging messages using any of these functions:
+`unilog` supports [blugnu/errorcontext](https://github.com/blugnu/errorcontext) when logging messages using any of these functions:
 
 * `Error()`
 * `Errorf()`
@@ -43,7 +43,7 @@ If an `ErrorContext` is identified, the context in the error is used to provide 
 
 `unilog` does not implement an actual logger.  It provides a delegate that routes logging calls via an _adapter_ to a logger configured by an application.  A consuming project will configure whatever logger it wishes and then wrap that with the appropriate _adapter_ so that it may be injected into any modules or packages that support a `unilog.Logger`.
 
-An adapter is provided for the standard library `log` package.  This can be initialised using `unitlog.StdLog()`.
+An adapter is provided for the standard library `log` package.  This may be initialised using `unitlog.StdLog()`.
 
 A `Nul` adapter is also provided.  This produces no log output what-so-ever ("logging to NUL").
 
@@ -58,7 +58,7 @@ An adapter for [logrus](https://github.com/sirupsen/logrus) is available in a se
 ### In an Application
 
 1. Configure a logger
-2. Wrap your logger in a `unilog.Logger` using either `unilog.UsingAdapter()` or a helper func such as `unilog.Nul()` or `unilog.StdLog()`.  For any other adapters, refer to their documentation for any helper funcs they may provide.
+2. Wrap your logger in a `unilog.Logger` using either `unilog.UsingAdapter()` or a helper func such as `unilog.Nul()` or `unilog.StdLog()`.  For any other adapters, refer to their documentation for any helper functions they may provide.
 3. Pass your `unilog.Logger` into any modules/packages used that support it
 4. _OPTIONAL:_ Register any `Enrichment` functions provided by your project
 5. To emit logs, initialise an entry with any relevant context and emit messages as required
@@ -138,7 +138,7 @@ The following three functions are required to be implemented by an `Adapter`:
 
 | function | description |
 | -- | -- |
-| `Emit(unilog.Level, string)` | implement this function to emit logs using whatver logging package your adapter supports.  Your adapter must map the `unilog.Level` to the corresponding level supported by the underlying logging package (or adapt the behaviour accordingly if the underlying plogging package does not directly support levelled logging) |
+| `Emit(unilog.Level, string)` | implement this function to emit logs using whichever logging package your adapter supports.  Your adapter must map the `unilog.Level` to the corresponding level supported by the underlying logging package (or adapt the behaviour accordingly if the underlying logging package does not directly support leveled logging) |
 | `NewEntry() Adapter` | implement this function to return a new adapter corresponding to a new log entry |
 |	`WithField(string, any) Adapter` | implement this function to return a new adapter with the supplied, named value added to any log enrichment on the receiving adapter |
 

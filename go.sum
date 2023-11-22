@@ -1,4 +1,4 @@
-github.com/blugnu/go-errorcontext v0.1.0 h1:/VRIE4BIygFNq5vvf6Z+ZgdZP0JV7+GGOICGSlcDNL0=
-github.com/blugnu/go-errorcontext v0.1.0/go.mod h1:OB/kqD+3gkypupbcXPyWoPj5aVU5xfoymZfmMojh9mQ=
+github.com/blugnu/errorcontext v0.2.1 h1:Fbgy7nhxESgsOcFxc76JD+1fmXAUTC2knnY5QpfR15Y=
+github.com/blugnu/errorcontext v0.2.1/go.mod h1:GQrJknpQOj6B5+1Qm+woo11KAU9QI2DaojBvA57LRi8=
 github.com/blugnu/go-logspy v0.1.1 h1:jpu9E7IWr8GcUo6jbqQ9juaxORPiPLvgnmkTs72XU2o=
 github.com/blugnu/go-logspy v0.1.1/go.mod h1:E+PMio89HeNXJ8TLGXGS3XX7cFRFe0i8oOpCOBeBuz4=

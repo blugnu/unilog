@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/blugnu/go-errorcontext"
+	"github.com/blugnu/errorcontext"
 	"github.com/blugnu/go-logspy"
 )
 
@@ -258,8 +258,8 @@ func TestLoggerEntryFromArgs(t *testing.T) {
 	ctx := context.WithValue(bg, key(1), "value")
 	sut := &logger{Context: bg, Adapter: &nulAdapter{}, fields: map[string]any{}}
 	rawerr := errors.New("error")
-	ctxerr := errorcontext.Wrap(ctx, rawerr, "message")
-	ctxerr2 := errorcontext.Wrap(context.WithValue(bg, key(2), "key2"), rawerr, "message")
+	ctxerr := errorcontext.Wrap(ctx, rawerr)
+	ctxerr2 := errorcontext.Wrap(context.WithValue(bg, key(2), "key2"), rawerr)
 
 	testcases := []struct {
 		name   string

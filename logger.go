@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/blugnu/go-errorcontext"
+	"github.com/blugnu/errorcontext"
 )
 
 // logger implements Logger, Enricher and Entry interfaces.  It encapsulates
@@ -53,7 +53,7 @@ func (log *logger) entryFromArgs(args ...any) Entry {
 			continue
 		}
 
-		ctx := errorcontext.FromError(log.Context, a.(error))
+		ctx := errorcontext.From(log.Context, a.(error))
 		if ctx == log.Context {
 			continue
 		}
@@ -134,7 +134,7 @@ func (log *logger) Warnf(format string, args ...any) {
 func (log *logger) Error(err any) {
 	switch err := err.(type) {
 	case error:
-		ctx := errorcontext.FromError(log.Context, err)
+		ctx := errorcontext.From(log.Context, err)
 		entry := log.fromContext(ctx)
 		entry.Emit(Error, err.Error())
 	case string:
@@ -174,7 +174,7 @@ func (log *logger) Fatalf(format string, args ...any) {
 // enriched with any  information in the context supported by a registered
 // enrichment function.
 func (log *logger) FatalError(err error) {
-	ctx := errorcontext.FromError(log.Context, err)
+	ctx := errorcontext.From(log.Context, err)
 	entry := log.fromContext(ctx)
 	entry.Fatal(err.Error())
 }
