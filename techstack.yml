@@ -1,7 +1,8 @@
 repo_name: blugnu/unilog
-report_id: 93ffbe6f5118ca681b16b4b2dce493e5
+report_id: 20ecb61045a16cdfca325461903310c8
+version: 0.1
 repo_type: Public
-timestamp: '2023-12-14T10:09:02+00:00'
+timestamp: '2024-01-05T09:00:56+00:00'
 requested_by: deltics
 provider: github
 branch: master
@@ -17,6 +18,7 @@ tools:
   category: Languages & Frameworks
   sub_category: Languages
   image_url: https://img.stackshare.io/service/1005/O6AczwfV_400x400.png
+  detection_source_url: https://github.com/blugnu/unilog
   detection_source: Repo Metadata
 - name: Git
   description: Fast, scalable, distributed revision control system
@@ -26,6 +28,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Version Control System
   image_url: https://img.stackshare.io/service/1046/git.png
+  detection_source_url: https://github.com/blugnu/unilog
   detection_source: Repo Metadata
 - name: GitHub Actions
   description: Automate your workflow from idea to production
@@ -35,6 +38,7 @@ tools:
   category: Build, Test, Deploy
   sub_category: Continuous Integration
   image_url: https://img.stackshare.io/service/11563/actions.png
+  detection_source_url: https://github.com/blugnu/unilog/blob/master/.github/workflows/pipeline.yml
   detection_source: ".github/workflows/pipeline.yml"
   last_updated_by: Jolyon Direnko-Smith
   last_updated_on: 2023-11-22 01:19:58.000000000 Z
